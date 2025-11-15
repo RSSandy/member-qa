@@ -1,0 +1,19 @@
+# Virtual environments
+.venv/
+venv/
+
+# Bytecode
+__pycache__/
+
+# Model & embedding caches
+data_cache/
+*.npy
+*.npz
+
+# HuggingFace caches
+.cache/
+huggingface/
+
+# General Python junk
+*.pyc
+*.pyo

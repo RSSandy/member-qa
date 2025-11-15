@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+requests
+sentence-transformers
+numpy
+scikit-learn
+uvicorn[standard]
+transformers
+accelerate
+einops
+auto-gptq
+openai
