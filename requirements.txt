@@ -10,3 +10,4 @@ accelerate
 einops
 auto-gptq
 openai
+slowapi

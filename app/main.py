@@ -1,36 +1,70 @@
-from fastapi import FastAPI, HTTPException
+# main.py
+
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from fastapi.responses import JSONResponse
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.data import load_corpus
-from app.embeddings import (
-    corpus_messages, 
-    corpus_embeddings, 
-    load_or_compute_embeddings,
-)
-from app.parsing import parse_question_llm
+from app.embeddings import load_or_compute_embeddings
 from app.retrieval import retrieve_relevant_messages
+
+# ALWAYS use OpenAI parsing + answer generation
+from app.parsing import parse_question
 from app.answer import generate_answer
 
 
+# -----------------------------
+#   RATE LIMITER
+# -----------------------------
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["30/minute"]
+)
+
+DEBUG_LAST = {
+    "parsed": None,
+    "retrieved": None
+}
+
+
+# -----------------------------
+#   LIFESPAN
+# -----------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global corpus_messages, corpus_embeddings
+    print("[INFO] Loading messages...")
+    messages = load_corpus()
 
-    print("[INFO] Loading messages (cache-aware)...")
-    corpus_messages = load_corpus()
-    print(f"[INFO] Loaded {len(corpus_messages)} messages.")
+    print("[INFO] Computing embeddings...")
+    embeddings = load_or_compute_embeddings(messages)
 
-    print("[INFO] Preparing embeddings (cache-aware)...")
-    corpus_embeddings = load_or_compute_embeddings(corpus_messages)
-    print("[INFO] Embeddings ready.")
+    app.state.corpus_messages = messages
+    app.state.corpus_embeddings = embeddings
 
     yield
 
-    print("[INFO] App shutdown.")
+
 
 app = FastAPI(lifespan=lifespan)
 
-## Request Model
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Try again later."}
+    )
+
+
 class AskRequest(BaseModel):
     question: str
 
@@ -41,23 +75,30 @@ def health():
 
 
 @app.post("/ask")
-def ask(req: AskRequest):
+@limiter.limit("30/minute")
+def ask(req: AskRequest, request: Request):
     question = req.question.strip()
-
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-    # 1) Parse the question
-    parsed = parse_question_llm(question)
+    # Parse the question with OpenAI
+    parsed = parse_question(question)
 
-    # 2) Retrieve relevant messages
+    # Retrieve relevant messages
     retrieved = retrieve_relevant_messages(
         question=question,
         user_name=parsed.get("user_name"),
-        k=5
+        k=5,
+        request=request
     )
 
-    # 3) Generate the final answer
+    # SAVE DEBUG INFO
+    DEBUG_LAST["parsed"] = parsed
+    DEBUG_LAST["retrieved"] = retrieved
+    print("DEBUG PARSED:", parsed)
+    
+    # Generate final answer with OpenAI
+    print("DEBUG retrieved passed into answer:", retrieved)
     answer = generate_answer(
         question=question,
         parsed=parsed,
@@ -65,3 +106,7 @@ def ask(req: AskRequest):
     )
 
     return answer
+
+@app.get("/debug/last")
+def debug_last():
+    return DEBUG_LAST

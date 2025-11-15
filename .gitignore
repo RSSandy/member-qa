@@ -2,6 +2,11 @@
 .venv/
 venv/
 
+# Env
+.env
+*.env
+.env.*
+
 # Bytecode
 __pycache__/
 
