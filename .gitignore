@@ -24,3 +24,5 @@ huggingface/
 # Some vague testing stuff
 tests/dump_messages.py 
 messages_dump.json
+tests/qa_answers.csv
+tests/qa_answers_2.csv

@@ -5,6 +5,10 @@ from pathlib import Path
 from typing import List
 from sklearn.metrics.pairwise import cosine_similarity
 
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+
 CACHE_DIR = Path("data_cache")
 CACHE_EMBEDDINGS = CACHE_DIR / "corpus_embeddings.npy"
 
@@ -20,20 +24,16 @@ def load_embeddings():
 
 
 def embed_texts(texts):
-    """
-    Dummy embedding function for Render:
-    We DO NOT embed new text using sentence-transformers.
-    Instead, we embed using a fallback 768d zero vector 
-    OR (better) force the question into the same model as before.
-    
-    But testing only needs semantic retrieval to work, so we embed
-    the question using a very simple TF-IDF-ish trick or zeros.
-    """
+    if isinstance(texts, str):
+        texts = [texts]
 
-    # --- Simplest safe fallback: zero-vector ---
-    # (Ensures shape compatibility)
-    embeddings = np.zeros((1, 768), dtype="float32")
-    return embeddings
+    embs = model.encode(texts, convert_to_numpy=True)
+
+    # Ensure (1, d) shape for single query
+    if embs.ndim == 1:
+        embs = embs.reshape(1, -1)
+
+    return embs
 
 
 # Render will call this on startup
