@@ -3,7 +3,7 @@ title: "Member QA"
 emoji: "🔍"
 colorFrom: "yellow"
 colorTo: "purple"
-sdk: "fastapi"
+sdk: "docker"
 app_file: "app.py"
 pinned: false
 ---
