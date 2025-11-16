@@ -72,6 +72,41 @@ System Architecture
    │    • returns JSON only      │
    └─────────────────────────────┘
 ```
+## API Usage
+
+#### 🔍 Health Check (Ping the Server)
+To verify the server is online:
+```bash
+curl https://rs-snayar-member-qa.hf.space/health
+```
+Expected response:
+```JSON
+{"status": "ok"}
+```
+
+#### 🤖 Ask a Question (POST /ask)
+
+Send a natural-language question to your RAG service:
+```bash
+curl -X POST "https://rs-snayar-member-qa.hf.space/ask" \
+     -H "Content-Type: application/json" \
+     -d '{"question": "When is Layla planning her trip to London?"}'
+
+```
+Example output:
+```JSON
+{
+  "answer": "Layla is planning her trip on June 14."
+}
+```
+### 💡 Example With a Variable
+QUESTION="For what date does Layla need orchestra seats?"
+``` bash
+curl -X POST "https://rs-snayar-member-qa.hf.space/ask" \
+     -H "Content-Type: application/json" \
+     -d "{\"question\": \"$QUESTION\"}"
+```
+Example questions can be found alongside expected answers in 'qa_answers.csv' .
 
 ## 🔍 Alternative Approaches Considered (and Why They Were Rejected)
 
