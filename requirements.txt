@@ -6,3 +6,4 @@ scikit-learn
 openai
 slowapi
 python-dotenv
+sentence-transformers
