@@ -1,13 +1,8 @@
 fastapi
-uvicorn
+uvicorn[standard]
 requests
-sentence-transformers
 numpy
 scikit-learn
-uvicorn[standard]
-transformers
-accelerate
-einops
-auto-gptq
 openai
 slowapi
+python-dotenv
