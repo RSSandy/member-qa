@@ -88,10 +88,10 @@ Expected response:
 
 Send a natural-language question to your RAG service:
 ```bash
-curl -X POST "https://rs-snayar-member-qa.hf.space/ask" \
-     -H "Content-Type: application/json" \
-     -d '{"question": "When is Layla planning her trip to London?"}'
-
+curl -s "https://rs-snayar-member-qa.hf.space/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"For what date does Layla need orchestra seats?"}' \
+  -w "\n
 ```
 Example output:
 ```JSON
